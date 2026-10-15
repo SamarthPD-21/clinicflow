@@ -144,7 +144,8 @@ td.actions { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap
 @media (max-width: 720px) {
   .shell { grid-template-columns: 1fr; }
   .sidebar { position: static; height: auto; flex-direction: row; align-items: center; padding: 10px 12px; gap: 12px; overflow-x: auto; }
-  .brand small, .env { display: none; }
+  .brand div, .env { display: none; }
+  .sidebar nav button { padding: 8px 10px; font-size: .85rem; }
   .sidebar nav { flex-direction: row; }
   .sidebar nav button span { display: none; }
   main { padding: 16px; }
