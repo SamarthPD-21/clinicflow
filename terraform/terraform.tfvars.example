@@ -1,0 +1,7 @@
+# Copy to terraform.tfvars and adjust. Never put AWS keys here; use `aws configure` / env vars.
+aws_region          = "ap-south-1"
+project             = "clinicflow"
+environment         = "dev"
+kubernetes_version  = "1.34"
+node_instance_types = ["t3.medium"]
+node_desired_size   = 2
