@@ -2,6 +2,7 @@ from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from prometheus_client import Counter
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, joinedload
 
@@ -11,6 +12,9 @@ from ..models import Appointment, Doctor, Patient
 from ..schemas import AppointmentCreate, AppointmentOut, AppointmentStatus, AppointmentUpdate, StatsOut
 
 router = APIRouter(prefix="/api/appointments", tags=["appointments"])
+
+BOOKINGS = Counter("clinicflow_appointments_booked_total", "Appointments booked", ["specialty"])
+CONFLICTS = Counter("clinicflow_booking_conflicts_total", "Bookings rejected because the doctor's slot was taken")
 
 # Appointments in these states still occupy the doctor's slot.
 BLOCKING_STATUSES = ("SCHEDULED", "CHECKED_IN")
@@ -69,6 +73,7 @@ def ensure_slot_free(db: Session, doctor_id: int, scheduled_at: datetime, exclud
     if exclude_id is not None:
         query = query.where(Appointment.id != exclude_id)
     if db.scalars(query).first() is not None:
+        CONFLICTS.inc()
         raise HTTPException(status_code=409, detail="Doctor already has an appointment in this slot")
 
 
@@ -136,7 +141,9 @@ def create_appointment(payload: AppointmentCreate, db: Session = Depends(get_db)
     appt = Appointment(**payload.model_dump(exclude={"scheduled_at"}), scheduled_at=scheduled_at)
     db.add(appt)
     db.commit()
-    return to_out(get_appointment_or_404(appt.id, db))
+    out = to_out(get_appointment_or_404(appt.id, db))
+    BOOKINGS.labels(specialty=out.doctor_specialty).inc()
+    return out
 
 
 @router.put("/{appointment_id}", response_model=AppointmentOut)
