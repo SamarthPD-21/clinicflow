@@ -1,7 +1,7 @@
 # Image tags are rewritten by CI (deploy job) to the commit SHA that was built and scanned.
 backend:
   image: ghcr.io/samarthpd-21/clinicflow-backend
-  tag: "c1b5ead7fb47adef2301593e752decd6e4f23435"
+  tag: "e3b8122519589b70c937c95e5c4de17675b02a0a"
   replicas: 2
   port: 8000
   clinicTimezone: Asia/Kolkata
@@ -11,7 +11,7 @@ backend:
 
 frontend:
   image: ghcr.io/samarthpd-21/clinicflow-frontend
-  tag: "c1b5ead7fb47adef2301593e752decd6e4f23435"
+  tag: "e3b8122519589b70c937c95e5c4de17675b02a0a"
   replicas: 2
   port: 8080
   resources:
