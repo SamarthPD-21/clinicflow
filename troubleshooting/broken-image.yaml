@@ -1,0 +1,17 @@
+# Symptom: pod stuck in ErrImagePull / ImagePullBackOff.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clinicflow-broken-image
+  namespace: clinicflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: clinicflow-broken-image }
+  template:
+    metadata:
+      labels: { app: clinicflow-broken-image }
+    spec:
+      containers:
+        - name: backend
+          image: ghcr.io/samarthpd-21/clinicflow-backend:v9.9.9-does-not-exist

@@ -1,0 +1,25 @@
+# Symptom: pod is Running but never Ready (0/1); /ready returns 503 because the DB password is wrong.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clinicflow-broken-readiness
+  namespace: clinicflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: clinicflow-broken-readiness }
+  template:
+    metadata:
+      labels: { app: clinicflow-broken-readiness }
+    spec:
+      containers:
+        - name: backend
+          image: ghcr.io/samarthpd-21/clinicflow-backend:latest
+          # Skip migrations so the container starts and the probe failure is what we observe.
+          command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+          env:
+            - name: DATABASE_URL
+              value: postgresql+psycopg://clinicflow:wrong-password@clinicflow-postgres:5432/clinicflow
+          readinessProbe:
+            httpGet: { path: /ready, port: 8000 }
+            periodSeconds: 5

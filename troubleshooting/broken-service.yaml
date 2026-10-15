@@ -1,0 +1,12 @@
+# Symptom: Service exists but has no endpoints, so requests time out / 503 at the ingress.
+apiVersion: v1
+kind: Service
+metadata:
+  name: clinicflow-backend-broken
+  namespace: clinicflow
+spec:
+  selector:
+    app: clinicflow-api   # real pods are labelled app=clinicflow-backend
+  ports:
+    - port: 8000
+      targetPort: 8000
