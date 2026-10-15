@@ -175,7 +175,7 @@ terraform destroy                            # always, when done
 ```
 
 Creates a VPC (`10.20.0.0/16`, two public and two private subnets in two AZs, one NAT gateway), an EKS
-1.34 control plane and a managed node group of 2 × t3.medium in the private subnets, with the EBS CSI
+1.34 control plane and a managed node group of 2 × c7i-flex.large in the private subnets (a Free plan account only allows free-tier types, so not t3.medium), with the EBS CSI
 add-on so the Postgres PVC gets a gp3 volume. No credentials live in the repo – Terraform uses the AWS
 CLI profile, and `*.tfvars` / state files are git-ignored.
 

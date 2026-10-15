@@ -3,3 +3,6 @@ postgres:
   storageClass: gp3
 ingress:
   host: ""   # empty host: serve on the ingress-nginx LoadBalancer DNS name
+monitoring:
+  serviceMonitor:
+    enabled: false   # no Prometheus Operator CRDs on the bare EKS cluster

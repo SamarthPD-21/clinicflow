@@ -29,9 +29,9 @@ variable "kubernetes_version" {
 }
 
 variable "node_instance_types" {
-  description = "Instance types for the managed node group"
+  description = "Instance types for the managed node group (c7i-flex.large is allowed on the AWS Free plan, t3.medium is not)"
   type        = list(string)
-  default     = ["t3.medium"]
+  default     = ["c7i-flex.large"]
 }
 
 variable "node_desired_size" {
