@@ -65,11 +65,25 @@ The scan does not prove the app is secure; it only covers known CVEs in packaged
 ## M7 – Terraform (AWS)
 
 `terraform/` – VPC (2 public + 2 private subnets across 2 AZs, NAT gateway) and EKS 1.34 with a managed node group
-(2 × t3.medium), EBS CSI add-on. `terraform.tfvars.example` is committed; no credentials are in the repo.
+(2 × c7i-flex.large), EBS CSI add-on. `terraform.tfvars.example` is committed; no credentials are in the repo.
 
 [m7-terraform-init-validate](screenshots/m7-terraform-init-validate.png) · [m7-terraform-plan](screenshots/m7-terraform-plan.png) ·
 [m7-terraform-apply](screenshots/m7-terraform-apply.png) · [m7-aws-console-vpc](screenshots/m7-aws-console-vpc.png) ·
-[m7-aws-console-eks](screenshots/m7-aws-console-eks.png) · [m7-terraform-destroy](screenshots/m7-terraform-destroy.png)
+[m7-aws-console-eks](screenshots/m7-aws-console-eks.png) · [m7-aws-cli-vpc-eks](screenshots/m7-aws-cli-vpc-eks.png) ·
+[m7-terraform-destroy](screenshots/m7-terraform-destroy.png)
+
+The app was also deployed to the EKS cluster with the same Helm chart (`-f values-eks.yaml`, Postgres on a gp3 EBS
+volume): [m7-eks-kubectl-nodes-pods](screenshots/m7-eks-kubectl-nodes-pods.png) ·
+[m7-eks-app-via-ingress](screenshots/m7-eks-app-via-ingress.png) · [m7-eks-app-dashboard](screenshots/m7-eks-app-dashboard.png)
+
+Two limits of the AWS Free plan account I hit:
+- Only free-tier instance types can be launched. The first apply used `t3.medium` and the node group hung; CloudTrail
+  showed `RunInstances ... not eligible for Free Tier`. I switched the nodes to `c7i-flex.large` (2 vCPU / 4 GiB) and
+  re-applied, which replaced just the node group (`4 added, 1 destroyed` in the apply screenshot).
+- The account can't create load balancers (`OperationNotPermitted`), so the ingress-nginx Service never got a public
+  hostname. I reached the ingress controller with `kubectl port-forward` instead; the Ingress rules are the same.
+
+Before `terraform destroy` I uninstalled the release and deleted the PVC so the EBS volume wasn't orphaned.
 
 ## M8 – Kubernetes + Helm
 
