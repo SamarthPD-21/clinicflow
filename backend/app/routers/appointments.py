@@ -1,4 +1,5 @@
 from datetime import date, datetime, time, timedelta
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func, select
@@ -28,6 +29,10 @@ def to_out(appt: Appointment) -> AppointmentOut:
         doctor_specialty=appt.doctor.specialty,
         patient_name=appt.patient.full_name,
     )
+
+
+def clinic_now() -> datetime:
+    return datetime.now(ZoneInfo(settings.clinic_timezone)).replace(tzinfo=None)
 
 
 def naive(dt: datetime) -> datetime:
@@ -91,7 +96,7 @@ def list_appointments(
 
 @router.get("/stats", response_model=StatsOut)
 def stats(db: Session = Depends(get_db)):
-    now = datetime.now()
+    now = clinic_now()
     today_start = datetime.combine(now.date(), time.min)
     rows = db.execute(select(Appointment.status, func.count(Appointment.id)).group_by(Appointment.status)).all()
     by_status = dict(rows)

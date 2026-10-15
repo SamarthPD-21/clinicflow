@@ -1,4 +1,6 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
+
+from app.routers.appointments import clinic_now
 
 SLOT = "2030-01-15T10:00:00"
 
@@ -67,7 +69,7 @@ def test_delete_appointment(client, doctor, patient):
 
 
 def test_stats_counts_today_and_completion_rate(client, doctor, patient):
-    today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
+    today = clinic_now().replace(hour=9, minute=0, second=0, microsecond=0)
     done = book(client, doctor, patient, when=today.isoformat()).json()
     book(client, doctor, patient, when=(today + timedelta(hours=1)).isoformat(), status="NO_SHOW")
     client.put(f"/api/appointments/{done['id']}", json={"status": "COMPLETED"})

@@ -7,6 +7,8 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg://clinicflow:clinicflow@localhost:5432/clinicflow"
     # Length of one bookable appointment slot, used for double-booking detection.
     slot_minutes: int = 30
+    # Appointments are stored as wall-clock time in the clinic's timezone.
+    clinic_timezone: str = "Asia/Kolkata"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
