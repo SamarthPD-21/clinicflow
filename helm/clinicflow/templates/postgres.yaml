@@ -1,4 +1,10 @@
 {{- if not .Values.postgres.existingSecret }}
+{{- /* Reuse the password from a previous install: Postgres only reads it when the volume is first initialised. */}}
+{{- $existing := lookup "v1" "Secret" .Release.Namespace (include "clinicflow.dbSecret" .) }}
+{{- $password := .Values.postgres.password }}
+{{- if and (not $password) $existing }}
+{{- $password = index $existing.data "password" | b64dec }}
+{{- end }}
 apiVersion: v1
 kind: Secret
 metadata:
@@ -7,7 +13,7 @@ metadata:
 type: Opaque
 stringData:
   username: {{ .Values.postgres.username | quote }}
-  password: {{ .Values.postgres.password | quote }}
+  password: {{ $password | default (randAlphaNum 24) | quote }}
 ---
 {{- end }}
 apiVersion: v1

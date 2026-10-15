@@ -15,7 +15,7 @@ a commit on my laptop to a monitored, autoscaled deployment on Kubernetes.
                                                                                    │
                          CI bumps image tag in helm/clinicflow/values.yaml ◀───────┘
                                           │
-                                   Argo CD (GitOps) ─▶ Kubernetes (kind locally / EKS on AWS via Terraform)
+                         helm upgrade --install ─▶ Kubernetes (kind locally / EKS on AWS via Terraform)
                                                          │
                 ┌──────────── ingress-nginx ─────────────┤
                 │  /      ─▶ frontend (React + nginx) x2 │
@@ -34,7 +34,7 @@ a commit on my laptop to a monitored, autoscaled deployment on Kubernetes.
 | Database | PostgreSQL 16 |
 | Tests | pytest (22 tests, in-memory SQLite, no production DB), ruff |
 | Containers | Multi-stage Dockerfiles, non-root users, Docker Compose |
-| CI/CD | GitHub Actions → GHCR, SHA image tags, GitOps deploy via Argo CD |
+| CI/CD | GitHub Actions → GHCR, SHA image tags, Helm deploy (Argo CD manifest optional) |
 | Security | Trivy image scan, build fails on fixable HIGH/CRITICAL CVEs |
 | Infra as code | Terraform: AWS VPC (2 public + 2 private subnets, NAT) + EKS with managed node group |
 | Kubernetes | Helm chart: Deployments, Services, StatefulSet, Ingress, HPA, ServiceMonitor |
@@ -116,9 +116,12 @@ Postgres. They cover CRUD on all three resources, validation errors, the double-
    `--severity HIGH,CRITICAL --ignore-unfixed --exit-code 1`, then push
    `ghcr.io/samarthpd-21/clinicflow-{backend,frontend}:<commit-sha>`. Nothing is pushed if the scan fails,
    and PRs build + scan but never push.
-3. **deploy** – rewrites the two image tags in `helm/clinicflow/values.yaml` to the new SHA and commits.
-   Argo CD watches that path and rolls the cluster forward. If a `KUBE_CONFIG_DATA` secret is set, the
-   job also runs `helm upgrade --install` directly (used for EKS).
+3. **deploy** – rewrites the two image tags in `helm/clinicflow/values.yaml` to the new SHA and commits,
+   so `main` always describes what should be running. If a `KUBE_CONFIG_DATA` secret is set (a reachable
+   cluster such as EKS), the job also runs `helm upgrade --install`. For the local kind cluster, which
+   GitHub can't reach, `scripts/deploy.sh` pulls `main` and runs the same Helm upgrade.
+   (`k8s/argocd-application.yaml` is an optional GitOps alternative: Argo CD watches the chart and syncs
+   on every tag bump, at the cost of no `helm list` release.)
 
 Images are never tagged `latest` by CI, so every running pod traces back to one commit.
 
@@ -130,16 +133,17 @@ kubectl apply -f k8s/namespace.yaml
 
 # ingress controller + metrics-server (for HPA)
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.13.3/deploy/static/provider/kind/deploy.yaml
+# kind only maps host ports 80/443 on the control-plane node, so pin the controller there
+kubectl patch deploy ingress-nginx-controller -n ingress-nginx --type merge -p \
+  '{"spec":{"template":{"spec":{"nodeSelector":{"kubernetes.io/hostname":"clinicflow-control-plane"},"tolerations":[{"key":"node-role.kubernetes.io/control-plane","operator":"Exists","effect":"NoSchedule"}]}}}}'
 helm upgrade --install metrics-server metrics-server/metrics-server -n kube-system --set args={--kubelet-insecure-tls}
 
 # monitoring (see monitoring/README.md)
 helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
   -n monitoring --create-namespace -f monitoring/kube-prometheus-stack-values.yaml
 
-# app – either directly with Helm ...
-helm upgrade --install clinicflow ./helm/clinicflow -n clinicflow
-# ... or through Argo CD (GitOps)
-kubectl apply -f k8s/argocd-application.yaml
+# app: deploys the image SHA that CI last wrote into values.yaml
+./scripts/deploy.sh          # = git pull + helm upgrade --install clinicflow ./helm/clinicflow -n clinicflow --wait
 ```
 
 Add to `/etc/hosts`: `127.0.0.1 clinicflow.local grafana.clinicflow.local prometheus.clinicflow.local`,
