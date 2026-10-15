@@ -1,0 +1,39 @@
+# helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+#   -n monitoring --create-namespace -f monitoring/kube-prometheus-stack-values.yaml
+prometheus:
+  prometheusSpec:
+    # Scrape every ServiceMonitor in the cluster, not only ones labelled for this release.
+    serviceMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorNamespaceSelector: {}
+    podMonitorSelectorNilUsesHelmValues: false
+    retention: 2d
+    resources:
+      requests: { cpu: 200m, memory: 512Mi }
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hosts: [prometheus.clinicflow.local]
+
+grafana:
+  enabled: true
+  # Admin password is generated into the kube-prometheus-stack-grafana secret (not committed).
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hosts: [grafana.clinicflow.local]
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      labelValue: "1"
+      # Load the ClinicFlow dashboard ConfigMap from the app namespace.
+      searchNamespace: ALL
+
+alertmanager:
+  enabled: false
+
+# kind/EKS control-plane components are not scrapeable from inside the cluster.
+kubeEtcd: { enabled: false }
+kubeControllerManager: { enabled: false }
+kubeScheduler: { enabled: false }
+kubeProxy: { enabled: false }
