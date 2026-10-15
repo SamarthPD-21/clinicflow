@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: ghcr.io/samarthpd-21/clinicflow-backend:latest
+          image: ghcr.io/samarthpd-21/clinicflow-backend:c1b5ead7fb47adef2301593e752decd6e4f23435   # any SHA tag CI has pushed
           # Skip migrations so the container starts and the probe failure is what we observe.
           command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
           env:
