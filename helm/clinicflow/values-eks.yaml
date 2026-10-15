@@ -1,0 +1,5 @@
+# Overrides for the AWS EKS cluster created by terraform/.
+postgres:
+  storageClass: gp3
+ingress:
+  host: ""   # empty host: serve on the ingress-nginx LoadBalancer DNS name

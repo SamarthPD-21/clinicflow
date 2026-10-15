@@ -1,0 +1,8 @@
+ClinicFlow {{ .Chart.AppVersion }} deployed as release "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}".
+
+  kubectl get pods,svc,ingress,hpa -n {{ .Release.Namespace }}
+{{- if .Values.ingress.enabled }}
+  Open: http://{{ default "<ingress-loadbalancer-address>" .Values.ingress.host }}/
+{{- else }}
+  kubectl port-forward -n {{ .Release.Namespace }} svc/{{ .Release.Name }}-frontend 3000:80
+{{- end }}

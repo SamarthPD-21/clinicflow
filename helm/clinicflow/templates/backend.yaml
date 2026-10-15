@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-backend
+  labels:
+    app: clinicflow-backend
+    {{- include "clinicflow.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.hpa.enabled }}
+  replicas: {{ .Values.backend.replicas }}
+  {{- end }}
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels: { app: clinicflow-backend }
+  strategy:
+    rollingUpdate: { maxUnavailable: 0, maxSurge: 1 }
+  template:
+    metadata:
+      labels:
+        app: clinicflow-backend
+        {{- include "clinicflow.labels" . | nindent 8 }}
+    spec:
+      {{- include "clinicflow.pullSecrets" . | nindent 6 }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+      initContainers:
+        # Hold the pod until Postgres accepts connections, so migrations don't crash-loop.
+        - name: wait-for-db
+          image: {{ .Values.postgres.image }}
+          command: ["sh", "-c", "until pg_isready -h {{ .Release.Name }}-postgres -p 5432; do echo waiting for db; sleep 2; done"]
+          securityContext: { runAsUser: 70 }
+      containers:
+        - name: backend
+          image: "{{ .Values.backend.image }}:{{ .Values.backend.tag }}"
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.backend.port }}
+          env:
+            - name: DB_USER
+              valueFrom: { secretKeyRef: { name: {{ include "clinicflow.dbSecret" . }}, key: username } }
+            - name: DB_PASSWORD
+              valueFrom: { secretKeyRef: { name: {{ include "clinicflow.dbSecret" . }}, key: password } }
+            - name: DATABASE_URL
+              value: "postgresql+psycopg://$(DB_USER):$(DB_PASSWORD)@{{ .Release.Name }}-postgres:5432/{{ .Values.postgres.database }}"
+            - name: CLINIC_TIMEZONE
+              value: {{ .Values.backend.clinicTimezone | quote }}
+          startupProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 3
+            failureThreshold: 30
+          readinessProbe:
+            httpGet: { path: /ready, port: http }
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 15
+          resources: {{- toYaml .Values.backend.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-backend
+  labels:
+    app: clinicflow-backend
+    {{- include "clinicflow.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector: { app: clinicflow-backend }
+  ports:
+    - name: http
+      port: {{ .Values.backend.port }}
+      targetPort: http

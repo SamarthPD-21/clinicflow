@@ -1,0 +1,24 @@
+# GitOps: Argo CD keeps the cluster in sync with helm/clinicflow on main.
+# CI rewrites the image tags in values.yaml, Argo CD notices and rolls out.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: clinicflow
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/SamarthPD-21/clinicflow.git
+    targetRevision: main
+    path: helm/clinicflow
+    helm:
+      releaseName: clinicflow
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: clinicflow
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

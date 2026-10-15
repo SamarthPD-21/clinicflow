@@ -1,0 +1,51 @@
+# Image tags are rewritten by CI (deploy job) to the commit SHA that was built and scanned.
+backend:
+  image: ghcr.io/samarthpd-21/clinicflow-backend
+  tag: "latest"
+  replicas: 2
+  port: 8000
+  clinicTimezone: Asia/Kolkata
+  resources:
+    requests: { cpu: 100m, memory: 128Mi }
+    limits: { cpu: 500m, memory: 384Mi }
+
+frontend:
+  image: ghcr.io/samarthpd-21/clinicflow-frontend
+  tag: "latest"
+  replicas: 2
+  port: 8080
+  resources:
+    requests: { cpu: 25m, memory: 32Mi }
+    limits: { cpu: 200m, memory: 128Mi }
+
+imagePullPolicy: IfNotPresent
+imagePullSecrets: []
+
+postgres:
+  image: postgres:16-alpine
+  database: clinicflow
+  username: clinicflow
+  # Override at install time (--set postgres.password=...) or supply existingSecret.
+  password: change-me-in-prod
+  existingSecret: ""
+  storage: 2Gi
+  storageClass: ""
+
+ingress:
+  enabled: true
+  className: nginx
+  host: clinicflow.local
+
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 60
+
+monitoring:
+  serviceMonitor:
+    enabled: true
+    # Must match the kube-prometheus-stack release name so Prometheus selects it.
+    releaseLabel: kube-prometheus-stack
+  grafanaDashboard:
+    enabled: true
