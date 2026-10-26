@@ -2,6 +2,7 @@
 
 - **Repository:** https://github.com/SamarthPD-21/clinicflow
 - **Pipeline runs:** https://github.com/SamarthPD-21/clinicflow/actions
+- **Demo video and slides:** [`demo/`](../demo/) – `ClinicFlow-Demo.mp4`, `ClinicFlow-DevOps-Capstone.pptx`
 - **Images:** `ghcr.io/samarthpd-21/clinicflow-backend`, `ghcr.io/samarthpd-21/clinicflow-frontend` (public, tagged with commit SHA)
 
 All screenshots are in [`docs/screenshots/`](screenshots/). File names start with the rubric module.

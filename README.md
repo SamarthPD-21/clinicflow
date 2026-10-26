@@ -54,6 +54,7 @@ monitoring/         kube-prometheus-stack values
 troubleshooting/    deliberately broken manifests + runbook
 scripts/            demo data seeding and load generation
 docs/               submission notes and screenshots
+demo/               recorded demo video and presentation slides
 ```
 
 ## API
@@ -205,3 +206,4 @@ password failing readiness) with the kubectl steps to diagnose and fix each one 
   false` and all capabilities dropped in the pod specs.
 
 Submission notes and screenshots: [`docs/SUBMISSION.md`](docs/SUBMISSION.md).
+Demo video and slides: [`demo/`](demo/).
